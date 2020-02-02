@@ -28,10 +28,34 @@ def get_int_range(min, max, prompt="Enter your selection: "):
     while (list_selection < min or list_selection > max):
         try:
             list_selection = int(input(prompt))
+            print()
             return list_selection
         except ValueError:
             continue
 
+def print_playlists(playlist_paging_object):
+    print()
+    print("0 \t Quit Program")
+    i = 1
+    for playlist in playlist_paging_object['items']:
+        print(i, '\t', playlist['name'])
+        i += 1
+    num_playlists = len(playlist_paging_object['items']) + 1
+    print(num_playlists, '\t', "Liked Songs\n")
+
+def build_track_id_list(track_object_list):
+    track_ids = []
+    for track in track_object_list:
+        track_uris.append(track['id'])
+    return track_ids
+
+def current_user_saved_tracks_arbitrary(track_ids, num_requests):
+    for i in range(num_requests):
+        spotify_object.current_user_saved_tracks_add(
+                track_uris[i*100:(i+1)*100])
+    spotify_object.current_user_saved_tracks_add(
+            track_uris[num_requests*100:])
+    print("\nSaved", len(track_uris), "results to Liked Songs")
 
 # Get the username from terminal
 username = sys.argv[1]
@@ -48,32 +72,19 @@ except:
 
 # Create our Spotify object
 spotify_object = spotipy.Spotify(auth=token)
-
 user = spotify_object.current_user()
 # print(json.dumps(user, sort_keys=True, indent=4))
 
 # Main Menu Loop
 while True:
     playlists = spotify_object.user_playlists(username)
-
-    print()
-    print("0 \t Quit Program")
-    # print out the play list titles as a sort of menu
-    i = 1
-    for playlist in playlists['items']:
-        # if playlist['owner']['id'] == username:
-        print(i, '\t', playlist['name'])
-        i += 1
-
-    num_playlists = len(playlists['items']) + 1
-    print(num_playlists, '\t', "Liked Songs\n")
+    print_playlists(playlists)
+    num_playlists = len(playlists['items'])
 
     # Menu selection
-    print()
-    print("There are", num_playlists, "playlists.")
+    print("\nThere are", num_playlists, "playlists.")
     print("Select a playlist by number.")
     list_selection = get_int_range(0, num_playlists)
-    print()
 
     # Handle an early exit from the application
     if (list_selection == 0):
@@ -83,7 +94,6 @@ while True:
     # Build a list of every track
     selection_name = ""
     playlist = None
-
     all_tracks = []
     iter = []
 
@@ -94,7 +104,6 @@ while True:
         iter = spotify_object.current_user_saved_tracks(50, 0)
 
     # Public playlist: 100 track limit per request
-    # can get number from playlists['items'][list_selection-1]['total']
     else:
         iter = spotify_object.user_playlist_tracks(
         playlists['items'][list_selection - 1]['owner']['id'],
@@ -110,30 +119,21 @@ while True:
 
     # Filter loop
     while True:
-        # if (len(all_tracks) == 0):
-        #    print("No results, returning to main menu.")
-        #    break
-
         # Print complete track list
         print()
-        i = 1
-        for track in all_tracks:
-            #print(json.dumps(track, sort_keys=True, indent=4))
-            print(i, '\t', track['name'], "by", track['artists'][0]['name'])
-            i += 1
-
+        for i in range(1, len(all_tracks)):
+            print(i, '\t', all_tracks[i]['name'], "by",
+                    all_tracks[i]['artists'][0]['name'])
         playlist_selection = list_selection
         # Print menu
-        print()
-        print(selection_name, "by", user['display_name'], "[", len(all_tracks),
-                "tracks ].")
+        print('\n', selection_name, "by", user['display_name'],
+                "[", len(all_tracks), "tracks ].")
         print("\nWhat do you want to do with it?")
         print("0 \tSave Tracks to Playlist")
         print("1 \tFilter By Genre")
         print("2 \tFilter By Artist")
         print("3 \tFilter By Track Number")
-        print("4 \tUnfollow/Delete Playlist")
-        print()
+        print("4 \tUnfollow/Delete Playlist,\n")
 
         NUM_OPTIONS = 4
         list_selection = get_int_range(0, NUM_OPTIONS)
@@ -213,9 +213,8 @@ while True:
         print("Playlist successfully deleted.\n")
         continue
 
-    #Results options:
+    #Result options:
     NUM_OPTIONS = 3
-
     print("\n0 \tReturn to main menu")
     print("1 \tAdd all results to library")
     print("2 \tMake a new playlist with results")
@@ -229,17 +228,10 @@ while True:
         continue
     #[1] Add all songs to library
     elif (list_selection == 1):
-        track_uris = []
-        for track in all_tracks:
-            track_uris.append(track['id'])
-
-        num_tracks = len(track_uris)
+        track_uris = build_track_id_list(all_tracks)
         num_requests = int(len(track_uris) / 100)
+        current_user_saved_tracks_arbitrary(track_uris, num_requests)
 
-        for i in range(num_requests):
-            spotify_object.current_user_saved_tracks_add(track_uris[i*100:(i+1)*100])
-        spotify_object.current_user_saved_tracks_add(track_uris[num_requests*100:])
-        print("\nSaved", len(track_uris), "results to Liked Songs")
     #[2] Make a new playlist, and add results to it
     elif (list_selection == 2):
         new_playlist_name = input("Enter a name for the new playlist:")
@@ -247,11 +239,7 @@ while True:
         new_playlist = spotify_object.user_playlist_create(user['id'],
                 new_playlist_name, True, new_playlist_description)
         print("\nCreated new playlist", new_playlist_name)
-        track_uris = []
-        for track in all_tracks:
-            track_uris.append(track['id'])
-
-        num_tracks = len(track_uris)
+        track_uris = build_track_id_list(all_tracks)
         num_requests = int(len(track_uris) / 100)
 
         for i in range(num_requests):
@@ -267,44 +255,24 @@ while True:
 
     #[3] Add songs to existing playlist
     elif (list_selection == 3):
-        print("0 \t Quit Program")
-        # print out the play list titles as a sort of menu
-        i = 1
-        for playlist in playlists['items']:
-            # if playlist['owner']['id'] == username:
-            print(i, '\t', playlist['name'])
-            i += 1
-
-        num_playlists = len(playlists['items']) + 1
-        print(num_playlists, '\t', "Liked Songs\n")
-
+        print_playlists(playlists)
+        num_playlists = len(playlists['items'])
         # Menu selection
-        print()
-        print("There are", num_playlists, "playlists.")
+        print("\nThere are", num_playlists, "playlists.")
         print("Select a playlist by number.")
         list_selection = get_int_range(0, num_playlists)
-        print()
 
         # Handle an early exit from the application
         if (list_selection == 0):
             print("Good-bye")
             quit(0)
 
-        track_uris = []
-        for track in all_tracks:
-            track_uris.append(track['id'])
-
-        num_tracks = len(track_uris)
+        track_uris = build_track_id_list(all_tracks)
         num_requests = int(len(track_uris) / 100)
 
         # Add songs to liked songs
         if (list_selection == num_playlists):
-            for i in range(num_requests):
-                spotify_object.current_user_saved_tracks_add(
-                        track_uris[i*100:(i+1)*100])
-            spotify_object.current_user_saved_tracks_add(
-                    track_uris[num_requests*100:])
-            print("\nSaved", len(track_uris), "results to Liked Songs")
+            current_user_saved_tracks_arbitrary(track_uris, num_requests)
         # Add songs to other playlist
         else:
             for i in range(num_requests):
@@ -320,8 +288,7 @@ while True:
             spotify_object.user_playlist_add_tracks(user['id'],
                     playlists['items'][list_selection-1]['id'],
                     track_uris[num_requests*100:])
-            print("Saved", len(track_uris),
-                    "results to",
+            print("Saved", len(track_uris), "results to",
                     playlists['items'][list_selection-1]['name'], "\n")
     # end add songs to a playlist
 # end main application loop
