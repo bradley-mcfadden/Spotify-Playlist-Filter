@@ -23,6 +23,16 @@ import webbrowser
 import spotipy.util as util
 from json.decoder import JSONDecodeError
 
+def get_int_range(min, max, prompt="Enter your selection: "):
+    list_selection = -2
+    while (list_selection < min or list_selection > max):
+        try:
+            list_selection = int(input(prompt))
+            return list_selection
+        except ValueError:
+            continue
+
+
 # Get the username from terminal
 username = sys.argv[1]
 scope = 'user-library-read playlist-modify-public playlist-modify-private'
@@ -62,12 +72,7 @@ while True:
     print()
     print("There are", num_playlists, "playlists.")
     print("Select a playlist by number.")
-    list_selection = -2
-    while (list_selection < 0 or list_selection > num_playlists):
-        try:
-            list_selection = int(input("Enter your selection:"))
-        except ValueError:
-            continue
+    list_selection = get_int_range(0, num_playlists)
     print()
 
     # Handle an early exit from the application
@@ -123,7 +128,7 @@ while True:
         print(selection_name, "by", user['display_name'], "[", len(all_tracks),
                 "tracks ].")
         print("\nWhat do you want to do with it?")
-        print("0 \tSave Tracks")
+        print("0 \tSave Tracks to Playlist")
         print("1 \tFilter By Genre")
         print("2 \tFilter By Artist")
         print("3 \tFilter By Track Number")
@@ -131,14 +136,7 @@ while True:
         print()
 
         NUM_OPTIONS = 4
-        list_selection = -1
-
-        while (list_selection < 0 or list_selection > NUM_OPTIONS + 1):
-            try:
-                list_selection = int(input("Enter your selection:"))
-            except ValueError:
-                continue
-
+        list_selection = get_int_range(0, NUM_OPTIONS)
 
         if (list_selection == 0):
             break
@@ -217,7 +215,6 @@ while True:
 
     #Results options:
     NUM_OPTIONS = 3
-    list_selection = -1
 
     print("\n0 \tReturn to main menu")
     print("1 \tAdd all results to library")
@@ -225,11 +222,8 @@ while True:
     print("3 \tAdd songs to an existing playlist")
     print()
 
-    while (list_selection < 0 or list_selection > NUM_OPTIONS + 1):
-        try:
-           list_selection = int(input("Enter your selection:"))
-        except ValueError:
-               continue
+    list_selection = get_int_range(0, NUM_OPTIONS)
+
     #[0] Quit the application
     if (list_selection == 0):
         continue
@@ -243,10 +237,8 @@ while True:
         num_requests = int(len(track_uris) / 100)
 
         for i in range(num_requests):
-            spotify_object.current_user_saved_tracks_add(
-                    track_uris[i*100:(i+1)*100])
-        spotify_object.current_user_saved_tracks_add(
-                track_uris[num_requests*100:])
+            spotify_object.current_user_saved_tracks_add(track_uris[i*100:(i+1)*100])
+        spotify_object.current_user_saved_tracks_add(track_uris[num_requests*100:])
         print("\nSaved", len(track_uris), "results to Liked Songs")
     #[2] Make a new playlist, and add results to it
     elif (list_selection == 2):
@@ -290,12 +282,7 @@ while True:
         print()
         print("There are", num_playlists, "playlists.")
         print("Select a playlist by number.")
-        list_selection = -2
-        while (list_selection < 0 or list_selection > num_playlists):
-            try:
-                list_selection = int(input("Enter your selection:"))
-            except ValueError:
-                continue
+        list_selection = get_int_range(0, num_playlists)
         print()
 
         # Handle an early exit from the application
