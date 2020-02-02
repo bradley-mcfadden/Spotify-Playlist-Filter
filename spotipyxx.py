@@ -17,9 +17,9 @@
 # SPOTIPY_REDIRECT_URI
 import os
 import sys
-import json
+# import json
 import spotipy
-import webbrowser
+# import webbrowser
 import spotipy.util as util
 from json.decoder import JSONDecodeError
 
@@ -49,13 +49,13 @@ def build_track_id_list(track_object_list):
         track_uris.append(track['id'])
     return track_ids
 
-def current_user_saved_tracks_arbitrary(track_ids, num_requests):
+def current_user_save_tracks_arbitrary(so, track_ids, num_requests):
     for i in range(num_requests):
-        spotify_object.current_user_saved_tracks_add(
-                track_uris[i*100:(i+1)*100])
-    spotify_object.current_user_saved_tracks_add(
-            track_uris[num_requests*100:])
-    print("\nSaved", len(track_uris), "results to Liked Songs")
+        so.current_user_saved_tracks_add(
+                track_ids[i*100:(i+1)*100])
+    so.current_user_saved_tracks_add(
+            track_ids[num_requests*100:])
+    print("\nSaved", len(track_ids), "results to Liked Songs")
 
 # Get the username from terminal
 username = sys.argv[1]
@@ -112,20 +112,18 @@ while True:
 
     # Build complete track list
     while (iter != None):
-        # all_tracks.append(iter)
         for track in iter['items']:
             all_tracks.append(track['track'])
         iter = spotify_object.next(iter)
 
     # Filter loop
     while True:
-        # Print complete track list
         print()
         for i in range(1, len(all_tracks)):
             print(i, '\t', all_tracks[i]['name'], "by",
                     all_tracks[i]['artists'][0]['name'])
         playlist_selection = list_selection
-        # Print menu
+
         print('\n', selection_name, "by", user['display_name'],
                 "[", len(all_tracks), "tracks ].")
         print("\nWhat do you want to do with it?")
@@ -230,8 +228,7 @@ while True:
     elif (list_selection == 1):
         track_uris = build_track_id_list(all_tracks)
         num_requests = int(len(track_uris) / 100)
-        current_user_saved_tracks_arbitrary(track_uris, num_requests)
-
+        current_user_save_tracks_arbitrary(spotify_object, track_uris, num_requests)
     #[2] Make a new playlist, and add results to it
     elif (list_selection == 2):
         new_playlist_name = input("Enter a name for the new playlist:")
@@ -242,6 +239,7 @@ while True:
         track_uris = build_track_id_list(all_tracks)
         num_requests = int(len(track_uris) / 100)
 
+        ### TODO: Replace with function
         for i in range(num_requests):
             spotify_object.user_playlist_remove_all_occurrences_of_tracks(
                     user['id'], new_playlist['id'], track_uris[i*100:(i+1)*100])
@@ -272,9 +270,10 @@ while True:
 
         # Add songs to liked songs
         if (list_selection == num_playlists):
-            current_user_saved_tracks_arbitrary(track_uris, num_requests)
+            current_user_save_tracks_arbitrary(spotify_object, rack_uris, num_requests)
         # Add songs to other playlist
         else:
+            ## TODO: replace with function
             for i in range(num_requests):
                 spotify_object.user_playlist_remove_all_occurrences_of_tracks(
                         user['id'], playlists['items'][list_selection-1]['id'],
