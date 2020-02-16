@@ -146,27 +146,39 @@ if __name__ == "__main__":
 	user = input("Enter your spotify id: ")
 	pf = PFilter(user)
 	while True: # while01
-		plists = pf.user_playlists()
-		[print('*', '\t', plist['name']) for plist in plists]
-		pchoice = None
-		while not pchoice: # while02 
-			pprompt = input("\nSelect a playlist by name (Q! to quit):" )
-			if (pprompt == "Q!")
-				sys.exit(0)
-			pchoice = [p for p in plists if p['name'] == pprompt]
-		# endwhile02
-		pchoice = pchoice[0]
-		print(pchoice['name'])
+		
+		libchoice = None
+		while not libchoice:
+			libprompt = input("Do you want to use your playlists or library? (playlist/library/Q!): ")
+			libchoice = libprompt if (libprompt == "playlist" or libprompt == "library" or libprompt == "Q!") else None
+		# endwhile
+		if libchoice == "playlist":
+			plists = pf.user_playlists()
+			[print('*', '\t', plist['name']) for plist in plists]
+			pchoice = None
+			while not pchoice: # while02 
+				pprompt = input("\nSelect a playlist by name (Q! to quit):" )
+				if (pprompt == "Q!"):
+					sys.exit(0)
+				pchoice = [p for p in plists if p['name'] == pprompt]
+			# endwhile02
+			pchoice = pchoice[0]
+			print(pchoice['name'])
 
-		trks = pf.user_playlist_tracks(pchoice['id'])
+			trks = pf.user_playlist_tracks(pchoice['id'])
+		elif libchoice == "library":
+			trks = pf.user_saved_tracks()
+		else:
+			sys.exit(0)
+		# endif
+
 		[print('$', '\t', trk['name'][:24], " by ", trk['artists'][0]['name'], 
 		" on ", trk['album']['name'][:24]) for trk in trks]
-		
-		# TODO Add menu to filter results with	
+
 		pf.set_results(trks)
+
 		while True: # while03
-			print("\nWhat do you want to do with the results?")
-			
+			print("\nWhat do you want to do with the results?")			
 			print(">0\tStop Filtering")
 			print(">1\tFilter by Genre")
 			print(">2\tFilter by Artist")
@@ -177,6 +189,7 @@ if __name__ == "__main__":
 			while fchoice < 0 or fchoice > 4: # while04
 				try:
 					fchoice = int(input("Select your option: "))
+					break	
 				except ValueError:
 					continue
 			# endwhile04
@@ -204,17 +217,16 @@ if __name__ == "__main__":
 			elif fchoice == 3:
 				pf.unfollow_playlist(pchoice['id'])
 				break
-			else # fchoice == 4:
-				results = pf.filter_results(s_term, ptv_search, lambda track, term, ptv : return ((track['name'] == term) == ptv))
+			else: # fchoice == 4:
+				results = pf.filter_results(s_term, ptv_search, lambda track, term, ptv : ((track['name'] == term) == ptv))
 			# endif02
 			pf.set_results(results)
 			trks = pf.results
 			[print('$', '\t', trk['name'][:24], " by ", trk['artists'][0]['name'], 
 			" on ", trk['album']['name'][:24]) for trk in trks]
 		# endwhile03
-		# TODO Add menu to interact with results, create a new playlist, save to a playlist
+
 		print("\nWhat do you want to do with these tracks?")
-		
 		print("%0> Nothing. Continue onward.")
 		print("%1> Create a new playlist.")
 		print("%2> Add results to an existing playlist.")
@@ -223,7 +235,8 @@ if __name__ == "__main__":
 		dchoice = -1
 		while dchoice < 0 or dchoice >= NUMOPS: # while05
 			try:
-				dchoice = int(input("Enter your choice: ")
+				dchoice = int(input("Enter your choice: "))
+				break
 			except ValueError:
 				continue
 		# endwhile05
@@ -235,11 +248,11 @@ if __name__ == "__main__":
 			np_name = input("Enter the name of the new playlist: ")
 			np_desc = input("Enter the description of the new playlist: ")
 			pf.playlist_add_tracks(pf.create_playlist(np_name, np_desc)['id'], pf.results)	
-		else # dchoice == 2:
+		else: # dchoice == 2:
 			pchoice = None
 			while not pchoice: # while06 
 				pprompt = input("\nSelect a playlist by name:" )
-				if (pprompt == "Q!")
+				if (pprompt == "Q!"):
 					sys.exit(0)
 				pchoice = [p for p in plists if p['name'] == pprompt]
 			# endwhile06
