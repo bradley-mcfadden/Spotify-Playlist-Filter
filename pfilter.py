@@ -10,14 +10,14 @@ import spotipy.util as util
 # pstve		Perform a postive or a negative search
 # -> ret	True or false if track matches search term
 def genre_filter(track, term, pstve=True):
-	genres = spot.artist(track['artists'][0]['id'])['genres']
+	genres = self.spot.artist(track['artists'][0]['id'])['genres']
 	match = False
 	for genre in genres:
 		if term == genre:
 			match = True
 			if pstve == True:
 				return True
-	if pstve == False and match == False
+	if pstve == False and match == False:
 		return True
 	return False
 
@@ -50,12 +50,12 @@ class PFilter:
 	scope = 'user-library-read playlist-modify-public playlist-modify-private'
 	def __init__(self, username):
 		try:
-			self.token = util.prompt_for_user_token(username, scope)
+			self.token = util.prompt_for_user_token(username, PFilter.scope)
 		except:
 			os.remove(f".cache-{username}")
-			self.token = util.prompt_for_user_token(username, scope)
-		self.spot = spotipy.Spotify(auth=token)
-		self.user = spot.current_user()
+			self.token = util.prompt_for_user_token(username, PFilter.scope)
+		self.spot = spotipy.Spotify(auth=self.token)
+		self.user = self.spot.current_user()
 		self.playlists = []
 		self.results = []
 
@@ -67,7 +67,7 @@ class PFilter:
 		it = self.spot.current_user_playlists()
 		while (it != None):
 			playlists += it['items']
-			it = spot.next(it)
+			it = self.spot.next(it)
 		return playlists    
 
 
@@ -78,8 +78,9 @@ class PFilter:
 		saved_tracks = []
 		it = self.spot.current_user_saved_tracks()
 		while (it != None):
-			saved_tracks += it['items'] 
-			it = spot.next(it)
+			# saved_tracks += it['items'] 
+			[saved_tracks.append(trk) for trk['track'] in it['items']]
+			it = self.spot.next(it)
 		return saved_tracks    
           
 
@@ -88,11 +89,12 @@ class PFilter:
 	# -> ret		List of track paging objects from playlist
 	def user_playlist_tracks(self, playlist_id):
 		playlist_tracks = []
-		it = spot.user_playlist_tracks(self.user['id'], playlist_id)
+		it = self.spot.user_playlist_tracks(self.user['id'], playlist_id)
 		while (it != None):
-			playlist_tracks += it['items']
-			it = spot.next(it)
-		return saved_tracks    
+			# playlist_tracks += it['items']
+			[playlist_tracks.append(trk['track']) for trk in it['items']]
+			it = self.spot.next(it)
+		return playlist_tracks 
 
 
 	# Create a new playlist
@@ -100,27 +102,27 @@ class PFilter:
 	# desc		Description of new playlist
 	# -> ret	Paging object of new playlist
 	def create_playlist(self, title, desc):
-		new_playlist = spot.user_playlists_create(self.user['id'], title, True, desc)
+		new_playlist = self.spot.user_playlists_create(self.user['id'], title, True, desc)
 		return new_playlist['id']       
 	
 
 	# Take in array of track objects and add them to the playlist
 	# - playlist_id Playlist to add tracks to
 	# - tracks		Array of track objects to add to playlist
-    def playlist_add_tracks(self, playlist_id, tracks):
-		track_ids = track['id'] for track in tracks
+	def playlist_add_tracks(self, playlist_id, tracks):
+		track_ids = [track['id'] for track in tracks]
 		num_requests = len(track_uris) // 100
 		for i in range(num_requests):
-			spot.user_playlist_remove_all_occurrences_of_tracks(self.user['id'],playlist_id, track_ids[i*100:(i+1)*100])
-			spot.user_playlist_add_tracks(self.user['id'], playlist_id, track_ids[i*100:(i+1)*100])
-		spot.user_playlist_remove_all_occurrences_of_tracks(self.user['id'], playlist_id, track_ids[num_requests*100:])
-		spot.user_playlist_add_tracks(self.user['id'], playlist_id, track_ids[num_requests*100:])
+			self.spot.user_playlist_remove_all_occurrences_of_tracks(self.user['id'],playlist_id, track_ids[i*100:(i+1)*100])
+			self.spot.user_playlist_add_tracks(self.user['id'], playlist_id, track_ids[i*100:(i+1)*100])
+		self.spot.user_playlist_remove_all_occurrences_of_tracks(self.user['id'], playlist_id, track_ids[num_requests*100:])
+		self.spot.user_playlist_add_tracks(self.user['id'], playlist_id, track_ids[num_requests*100:])
 
 
 	# Set the result set to something else
 	# tracks	List of track paging objects to update with
-    def set_results(self, tracks):
-        self.results = tracks
+	def set_results(self, tracks):
+		self.results = tracks
 
 
 	# Reduce the result set with a filter function
@@ -128,12 +130,30 @@ class PFilter:
 	# pstve		Perform a postive or negative search
 	# flter		Filter function to apply to each track paging object
 	# -> ret	Updated list of track objects
-    def filter_results(self, term, pstve=True, flter=genre_filter):
+	def filter_results(self, term, pstve=True, flter=genre_filter):
 		self.results = [track for track in self.results if flter(track, term, pstve)]
 		return self.results        
 
 
 	# Unfollow some playlist
 	# playlist_id	List ID of the playlist you want to unfollow
-    def unfollow_playlist(self, playlist_id):
-		spot.user_playlist_unfollow(self.user['id'], playlist_id)        
+	def unfollow_playlist(self, playlist_id):
+		self.spot.user_playlist_unfollow(self.user['id'], playlist_id)        
+
+
+if __name__ == "__main__":
+	user = input("Enter your spotify id: ")
+	pf = PFilter(user)
+	while True:
+		plists = pf.user_playlists()
+		[print('*', '\t', plist['name']) for plist in plists]
+		pchoice = None
+		while not pchoice: 
+			pprompt = input("\nSelect a playlist by name:" )
+			pchoice = [p for p in plists if p['name'] == pprompt]
+		pchoice = pchoice[0]
+		print(pchoice['name'])
+
+		trks = pf.user_playlist_tracks(pchoice['id'])
+		[print('$', '\t', trk['name'][:24], " by ", trk['artists'][0]['name'], " on ", trk['album']['name'][:24]) for trk in trks]
+		print(len(trks))

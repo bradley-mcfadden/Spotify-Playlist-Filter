@@ -1,3 +1,7 @@
+# NOTE This is deprecated, and probably doesn't work anyways.
+# NOTE It is currently serving as reference for the functionality
+# NOTE of the oo programmed version, so consult that instead
+#
 # This is a search tool and playlist manager for Spotify
 # It allows you to perform more advanced searches on your
 # owned playlists, which allows you to more efficiently sort
@@ -101,7 +105,7 @@ while True:
     # can get number from current_user_saved_tracks()['total']
     if (list_selection == num_playlists):
         selection_name = "Liked Songs"
-        iter = spotify_object.current_user_saved_tracks(50, 0)
+        iter = spotify_object.current_user_saved_tracks()
 
     # Public playlist: 100 track limit per request
     else:
