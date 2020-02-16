@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
 		exit_action = QAction("Exit", self)
 		exit_action.triggered.connect(self.exit_app)
 		self.file_menu.addAction(exit_action)
-		sel.fsetCentralWidget(widget)
+		self.setCentralWidget(widget)
 
 
 	@Slot()
@@ -26,9 +26,9 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
 
-	# widget = Widget()
+	widget = Widget()
 	window = MainWindow(widget)
-	window.resize(800, 600)
+	window.resize(1000, 600)
 	window.show()
 	
 	sys.exit(app.exec_())
