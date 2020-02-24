@@ -60,7 +60,7 @@ class PFilter:
 	# desc		Description of new playlist
 	# -> ret	Paging object of new playlist
 	def create_playlist(self, title, desc):
-		new_playlist = self.spot.user_playlists_create(self.user['id'], title, True, desc)
+		new_playlist = self.spot.user_playlist_create(self.user['id'], title, True, desc)
 		return new_playlist['id']       
 	
 
@@ -69,7 +69,7 @@ class PFilter:
 	# - tracks		Array of track objects to add to playlist
 	def playlist_add_tracks(self, playlist_id, tracks):
 		track_ids = [track['id'] for track in tracks]
-		num_requests = len(track_uris) // 100
+		num_requests = len(track_ids) // 100
 		for i in range(num_requests):
 			self.spot.user_playlist_remove_all_occurrences_of_tracks(self.user['id'],playlist_id, track_ids[i*100:(i+1)*100])
 			self.spot.user_playlist_add_tracks(self.user['id'], playlist_id, track_ids[i*100:(i+1)*100])
@@ -247,7 +247,7 @@ if __name__ == "__main__":
 		elif dchoice == 1:
 			np_name = input("Enter the name of the new playlist: ")
 			np_desc = input("Enter the description of the new playlist: ")
-			pf.playlist_add_tracks(pf.create_playlist(np_name, np_desc)['id'], pf.results)	
+			pf.playlist_add_tracks(pf.create_playlist(np_name, np_desc), pf.results)	
 		else: # dchoice == 2:
 			pchoice = None
 			while not pchoice: # while06 
